@@ -8,7 +8,7 @@ pipeline {
                 archiveArtifacts artifacts: 'dist/trainSchedule.zip'
             }
         }
-        stage('Build Docker Image') {
+        stage('building the docker image') {
             when {
                 branch 'master'
             }
@@ -21,9 +21,9 @@ pipeline {
                 }
             }
         }
-        stage('Push Docker Image') {
+        stage('Push the docker image to registry') {
             when {
-                branch 'master'
+                branch master
             }
             steps {
                 script {
@@ -34,25 +34,29 @@ pipeline {
                 }
             }
         }
-        stage('DeployToProduction') {
+        stage('Deploy to Production') {
             when {
-                branch 'master'
+                branch master
             }
             steps {
                 input 'Deploy to Production?'
                 milestone(1)
-                withCredentials([usernamePassword(credentialsId: 'webserver_creds', usernameVariable: 'USERNAME', passwordVariable: 'USERPASS')]) {
+                withCredentials([usernamePassword(credentialsId: 'webserver_creds', passwordVariable: 'USERPASS', usernameVariable: 'USERNAME')]) {
                     script {
-                        sh "sshpass -p '$USERPASS' -v ssh -o StrictHostKeyChecking=no $USERNAME@$prod_ip \"docker pull akarshthodupunuri/train-schedule:${env.BUILD_NUMBER}\""
-                        try {
-                            sh "sshpass -p '$USERPASS' -v ssh -o StrictHostKeyChecking=no $USERNAME@$prod_ip \"docker stop train-schedule\""
-                            sh "sshpass -p '$USERPASS' -v ssh -o StrictHostKeyChecking=no $USERNAME@$prod_ip \"docker rm train-schedule\""
-                        } catch (err) {
-                            echo: 'caught error: $err'
+                        docker.withRegistry('https://registry.hub.docker.com', 'dockerhub_creds') {
+                            sh "sshpass -p '$USERPASS' -v ssh -o StrictHostKeyChecking=no $USERNAME@$prod_ip \"docker pull akarshthodupunuri/train-schedule:${env.BUILD_NUMBER}\""
+                            try {
+                                sh "sshpass -p '$USERPASS' -v ssh -o StrictHostKeyChecking=no $USERNAME@prod_ip \"docker stop train-schedule\""
+                                sh "sshpass -p '$USERPASS' -v ssh -o StricthostKeychecking=no $USERNAME@$prod_ip \"docker rm train-schedule\""
+                            } catch (err) {
+                                echo: 'caught error: $err'
+                            }
+                            sh "sshpass -p $USERPASS -v ssh -o StrictHostkeyChecking=no $USERNAME@prod_ip \"docker run --restart=always --name train-schedule -p 8080:8080 -d akarshthodupunuri/train-schedule:${env.BUILD_NUMBER}\""
                         }
-                        sh "sshpass -p '$USERPASS' -v ssh -o StrictHostKeyChecking=no $USERNAME@$prod_ip \"docker run --restart always --name train-schedule -p 8080:8080 -d willbla/train-schedule:${env.BUILD_NUMBER}\""
+                        
                     }
                 }
+
             }
         }
     }
