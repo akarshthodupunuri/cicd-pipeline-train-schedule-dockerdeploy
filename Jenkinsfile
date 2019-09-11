@@ -10,6 +10,9 @@ pipeline {
         }
 
         stage('building the docker image') {
+            when {
+                branch 'master'
+            }
             steps {
                 script {
                     app = docker.build("akarshthodupunuri/train-schedule")
