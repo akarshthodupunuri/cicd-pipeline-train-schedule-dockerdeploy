@@ -43,6 +43,7 @@ pipeline {
                 milestone(1)
                 withCredentials([usernamePassword(credentialsId: 'webserver_creds', passwordVariable: 'USERPASS', usernameVariable: 'USERNAME')]) {
                     script {
+                        sh "ls -la ${workspace}"
                         docker.withRegistry('https://registry.hub.docker.com', 'dockerhub_creds') {
                             sh "sshpass -p '$USERPASS' -v ssh -o StrictHostKeyChecking=no $USERNAME@$prod_ip \"docker pull akarshthodupunuri/train-schedule:${env.BUILD_NUMBER}\""
                             try {
