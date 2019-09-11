@@ -23,7 +23,7 @@ pipeline {
         }
         stage('Push the docker image to registry') {
             when {
-                branch master
+                branch 'master'
             }
             steps {
                 script {
@@ -36,7 +36,7 @@ pipeline {
         }
         stage('Deploy to Production') {
             when {
-                branch master
+                branch 'master'
             }
             steps {
                 input 'Deploy to Production?'
