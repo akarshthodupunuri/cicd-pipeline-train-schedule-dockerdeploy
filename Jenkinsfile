@@ -16,9 +16,9 @@ pipeline {
             steps {
                 script {
                     app = docker.build("akarshthodupunuri/train-schedule")
-                    }
                 }
             }
+           
         }
 
         stage('Push the docker image to registry') {
